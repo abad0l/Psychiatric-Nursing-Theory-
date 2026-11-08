@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Quiz - Psychiatric Nursing</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 25px; /* Adjusted margin since subtitle is removed */
+    font-size: 2em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
+  .score-bar {
+    background: #fff;
+    border-radius: 15px;
+    padding: 15px 25px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    position: sticky;
+    top: 10px;
+    z-index: 100;
+  }
+  .score-bar .score-item { font-size: 1.1em; font-weight: bold; }
+  .score-bar .score-item span { color: #667eea; }
+  .reset-btn {
+    background: #667eea;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background 0.3s;
+  }
+  .reset-btn:hover { background: #5568d3; }
+  .section-title {
+    background: rgba(255,255,255,0.95);
+    padding: 15px 25px;
+    border-radius: 12px;
+    margin: 30px 0 20px;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #764ba2;
+    border-left: 5px solid #667eea;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  }
+  .question-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+  }
+  .question-card:hover { transform: translateY(-2px); }
+  .q-number {
+    display: inline-block;
+    background: #667eea;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-bottom: 12px;
+  }
+  .q-text {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 18px;
+    line-height: 1.6;
+    color: #222;
+  }
+  .option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: #f5f7ff;
+    border: 2px solid #e0e5f5;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-family: inherit;
+    color: #333;
+    line-height: 1.5;
+  }
+  .option:hover:not(:disabled) {
+    background: #e8edff;
+    border-color: #667eea;
+    transform: translateX(4px);
+  }
+  .option:disabled { cursor: default; opacity: 0.9; }
+  .option.correct {
+    background: #d4edda !important;
+    border-color: #28a745 !important;
+    color: #155724 !important;
+    font-weight: bold;
+  }
+  .option.correct::after {
+    content: ' ✔';
+    color: #28a745;
+    font-weight: bold;
+    float: right;
+  }
+  .option.wrong {
+    background: #f8d7da !important;
+    border-color: #dc3545 !important;
+    color: #721c24 !important;
+  }
+  .option.wrong::after {
+    content: ' ✘';
+    color: #dc3545;
+    font-weight: bold;
+    float: right;
+  }
+  .feedback {
+    margin-top: 12px;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-weight: bold;
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct-msg {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+  }
+  .feedback.wrong-msg {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.4em; }
+    .question-card { padding: 18px; }
+    .q-text { font-size: 1em; }
+    .option { padding: 12px 14px; font-size: 0.95em; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧠 Psychiatric Nursing - Interactive Quiz</h1>
+
+  <div class="score-bar">
+    <div class="score-item">✅ Correct: <span id="correctCount">0</span></div>
+    <div class="score-item">❌ Wrong: <span id="wrongCount">0</span></div>
+    <div class="score-item">📊 Score: <span id="percent">0%</span></div>
+    <button class="reset-btn" onclick="resetQuiz()">🔄 Reset</button>
+    <div class="progress-bar-container" style="flex-basis:100%;">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <div id="quizContent"></div>
+</div>
+
+<script>
+const questions = [
+  // ===== PRINCIPLES OF PSYCHIATRIC NURSING (Q1-Q20) =====
+  { section: "📁 Principles of Psychiatric Nursing", q: "Which of the following best describes the meaning of a principle in psychiatric nursing?", options: ["A. A specific treatment used for a particular diagnosis", "B. A rule that guides one's actions", "C. A method of controlling patient behavior", "D. A medical procedure performed by the nurse"], answer: 1 },
+  { section: null, q: "Acceptance of a psychiatric patient means:", options: ["A. Approving all of the patient's behaviors", "B. Allowing the patient to do whatever he wants", "C. Taking the patient as he is without trying to change or punish him", "D. Ignoring inappropriate behavior"], answer: 2 },
+  { section: null, q: "Which nursing action is most consistent with the principle of acceptance?", options: ["A. Punishing the patient for undesirable behavior", "B. Judging the patient's behavior as right or wrong", "C. Laughing at the patient's fears", "D. Remaining nonjudgmental and non-punitive"], answer: 3 },
+  { section: null, q: "A patient says, \"I am extremely frightened.\" Which response best demonstrates reflection of feelings?", options: ["A. \"You should not be frightened.\"", "B. \"There is nothing to worry about.\"", "C. \"You seem frightened. What is making you feel this way?\"", "D. \"You need to calm down.\""], answer: 2 },
+  { section: null, q: "The primary purpose of allowing a patient to express strongly held feelings is to:", options: ["A. Encourage aggressive behavior", "B. Help the patient discharge emotions without punishment", "C. Distract the patient from the problem", "D. Make the patient dependent on the nurse"], answer: 1 },
+  { section: null, q: "Which statement best describes the role of self-understanding in psychiatric nursing?", options: ["A. It allows the nurse to control the patient's behavior.", "B. It helps the nurse understand her own reactions and respond objectively.", "C. It prevents the nurse from developing an emotional response.", "D. It eliminates the need for supervision."], answer: 1 },
+  { section: null, q: "A nurse becomes anxious when caring for a particular patient. According to the principle of self-understanding, the nurse should first:", options: ["A. Avoid the patient", "B. Blame the patient for causing the anxiety", "C. Explore why she feels anxious or frightened", "D. Immediately transfer the patient to another nurse"], answer: 2 },
+  { section: null, q: "Consistency in psychiatric nursing primarily contributes to the patient's:", options: ["A. Independence", "B. Security", "C. Diagnosis", "D. Medication adherence"], answer: 1 },
+  { section: null, q: "Why is consistency important when caring for psychiatric patients?", options: ["A. It prevents all undesirable behavior.", "B. It eliminates the need for communication.", "C. Fear of the unknown can produce anxiety, while consistency makes expectations predictable.", "D. It allows nurses to avoid setting limits."], answer: 2 },
+  { section: null, q: "Which intervention best demonstrates consistency in the psychiatric ward?", options: ["A. Changing ward routines frequently", "B. Allowing each staff member to use a different approach", "C. Informing patients about changes in the ward routine", "D. Allowing patients to determine all ward rules"], answer: 2 },
+  { section: null, q: "Which statement reflects appropriate reassurance in psychiatric nursing?", options: ["A. \"You will definitely get well very soon.\"", "B. \"There is absolutely nothing to worry about.\"", "C. \"Your fears are groundless.\"", "D. Providing realistic support without giving false assurance"], answer: 3 },
+  { section: null, q: "A patient remains silent and refuses to talk. Which nursing action is most appropriate as a form of reassurance?", options: ["A. Force the patient to talk", "B. Leave the patient completely alone", "C. Sit beside the patient and accept his silence", "D. Tell the patient that silence is unacceptable"], answer: 2 },
+  { section: null, q: "According to the principles of psychiatric nursing, behavioral change occurs primarily through:", options: ["A. Rational explanations and advice", "B. Emotional experiences", "C. Repeated instructions", "D. Punishment"], answer: 1 },
+  { section: null, q: "The nurse should interpret a patient's behavior only when the patient:", options: ["A. Is experiencing severe anxiety", "B. Is ready and emotionally secure enough to tolerate the interpretation", "C. Has requested medication", "D. Refuses to communicate"], answer: 1 },
+  { section: null, q: "Which nursing action is most likely to unnecessarily increase a patient's anxiety?", options: ["A. Providing appropriate orientation", "B. Using simple language", "C. Having careless conversations within the patient's hearing", "D. Listening to the patient's concerns"], answer: 2 },
+  { section: null, q: "When observing a psychiatric patient's behavior, the nurse should primarily ask:", options: ["A. \"Is this behavior right or wrong?\"", "B. \"How can I stop this behavior?\"", "C. \"Why did the patient behave this way?\"", "D. \"How can I punish this behavior?\""], answer: 2 },
+  { section: null, q: "Objectivity in psychiatric nursing means:", options: ["A. Ignoring the patient's behavior", "B. Evaluating behavior according to the nurse's personal values", "C. Evaluating behavior without mixing personal feelings, opinions, or judgments", "D. Agreeing with everything the patient says"], answer: 2 },
+  { section: null, q: "The primary focus of a professional nurse-patient relationship is:", options: ["A. The personal needs of the nurse", "B. The emotional and personal needs of the patient", "C. The nurse's social relationships", "D. The patient's dependence on the nurse"], answer: 1 },
+  { section: null, q: "A patient expresses an unrealistic belief. Which nursing response best demonstrates maintaining contact with reality?", options: ["A. Agreeing with the unrealistic belief", "B. Supporting the patient's unrealistic interpretation", "C. Rejecting and punishing the patient for the belief", "D. Not agreeing with the unrealistic idea while continuing to accept the patient"], answer: 3 },
+  { section: null, q: "Which intervention best demonstrates the use of positive reinforcement in psychiatric nursing?", options: ["A. Focusing primarily on the patient's mistakes", "B. Ignoring positive changes in behavior", "C. Recognizing and reinforcing positive aspects of the patient's life", "D. Punishing undesirable behavior"], answer: 2 },
+
+  // ===== NURSE-PATIENT RELATIONSHIP (Q21-Q40) =====
+  { section: "📁 Nurse-Patient Relationship", q: "The nurse-patient relationship is primarily considered a:", options: ["A. Social relationship", "B. Therapeutic and professional relationship", "C. Friendship relationship", "D. Family relationship"], answer: 1 },
+  { section: null, q: "The main purpose of a therapeutic nurse-patient relationship is to:", options: ["A. Meet the nurse's personal needs", "B. Provide social interaction", "C. Help the patient change behavior and become independent", "D. Make the patient dependent on the nurse"], answer: 2 },
+  { section: null, q: "Which of the following best describes positive regard?", options: ["A. Agreeing with everything the patient says", "B. Viewing the patient as worthy of care and capable of achievement", "C. Feeling sorry for the patient", "D. Controlling the patient's decisions"], answer: 1 },
+  { section: null, q: "A patient avoids talking about a troubling aspect of himself. This behavior is best described as:", options: ["A. Empathy", "B. Genuineness", "C. Resistance", "D. Positive regard"], answer: 2 },
+  { section: null, q: "Which of the following is a major goal of a therapeutic relationship?", options: ["A. Increasing patient dependence", "B. Facilitating communication of distressing thoughts and feelings", "C. Encouraging social relationships with the nurse", "D. Avoiding discussion of problems"], answer: 1 },
+  { section: null, q: "Which characteristic distinguishes a professional relationship from a social relationship?", options: ["A. It is unlimited in time", "B. It fulfills mutual personal needs", "C. It is goal-directed and purposeful", "D. It involves sharing personal affairs"], answer: 2 },
+  { section: null, q: "Which component of the therapeutic relationship involves accurately perceiving the patient's feelings and perspective?", options: ["A. Sympathy", "B. Empathy", "C. Resistance", "D. Positive regard"], answer: 1 },
+  { section: null, q: "What is the major difference between empathy and sympathy?", options: ["A. Empathy involves feeling exactly what the patient feels.", "B. Sympathy helps maintain objectivity.", "C. Empathy involves understanding the patient's feelings while maintaining objectivity.", "D. Sympathy is essential for therapeutic communication."], answer: 2 },
+  { section: null, q: "Which behavior best demonstrates genuineness by the nurse?", options: ["A. Hiding behind the professional role", "B. Communicating clearly without distorting messages", "C. Avoiding communication of feelings", "D. Sharing all personal experiences with the patient"], answer: 1 },
+  { section: null, q: "Trust in the nurse-patient relationship is best promoted when the nurse is:", options: ["A. Authoritative", "B. Honest and trustworthy", "C. Emotionally dependent on the patient", "D. Overprotective"], answer: 1 },
+  { section: null, q: "A therapeutic relationship is described as \"negotiated\" because:", options: ["A. The nurse makes all decisions", "B. The patient is an active decision maker", "C. The family makes all decisions", "D. No goals are established"], answer: 1 },
+  { section: null, q: "Which nursing behavior indicates blurred therapeutic boundaries?", options: ["A. Encouraging patient independence", "B. Maintaining confidentiality", "C. Over-helping the patient by doing tasks he can perform independently", "D. Establishing clear goals"], answer: 2 },
+  { section: null, q: "The initial or pre-orientation phase begins:", options: ["A. After discharge", "B. When the patient enters the working phase", "C. Before the nurse and patient meet", "D. After the first therapeutic session"], answer: 2 },
+  { section: null, q: "Which activity is appropriate during the pre-orientation phase?", options: ["A. Evaluating termination", "B. Reviewing the patient's history and diagnosis", "C. Facilitating behavioral change", "D. Reducing the frequency of sessions"], answer: 1 },
+  { section: null, q: "The primary aim of the orientation phase is to:", options: ["A. Terminate the relationship", "B. Bring about behavioral change", "C. Assess patient needs, establish goals, and develop trust", "D. Encourage the patient to form other relationships"], answer: 2 },
+  { section: null, q: "Which of the following commonly characterizes the orientation phase?", options: ["A. Complete trust", "B. Low anxiety and independence", "C. Lack of knowledge about each other and high dependence", "D. Achievement of therapeutic goals"], answer: 2 },
+  { section: null, q: "A therapeutic contract is best defined as:", options: ["A. An agreement between nurse and patient to accomplish clearly stated goals", "B. A legal agreement concerning hospitalization", "C. A social agreement between the nurse and patient's family", "D. An agreement that allows the nurse to control the patient"], answer: 0 },
+  { section: null, q: "The primary aim of the working phase is to:", options: ["A. Establish the first contact", "B. Bring about positive changes in the patient's behavior", "C. Introduce the patient to the nurse", "D. End the relationship"], answer: 1 },
+  { section: null, q: "A patient unconsciously transfers emotional reactions originally associated with an important childhood figure onto the nurse. This is known as:", options: ["A. Resistance", "B. Countertransference", "C. Transference", "D. Empathy"], answer: 2 },
+  { section: null, q: "Which intervention is most appropriate during the termination phase?", options: ["A. Suddenly ending all contact with the patient", "B. Increasing the frequency of sessions", "C. Gradually reducing the frequency and intensity of sessions", "D. Avoiding discussion of termination"], answer: 2 },
+
+  // ===== SCHIZOPHRENIA (Q41-Q66) =====
+  { section: "📁 Schizophrenia", q: "Which of the following is a characteristic feature of schizophrenia?", options: ["A. Disordered thinking", "B. Increased emotional expression", "C. Normal perception", "D. Improved social functioning"], answer: 0 },
+  { section: null, q: "The lifetime prevalence of schizophrenia presented in the lecture is approximately:", options: ["A. 0.1%", "B. 1%", "C. 5%", "D. 10%"], answer: 1 },
+  { section: null, q: "Schizophrenia typically has its onset during:", options: ["A. Early childhood", "B. Late adolescence or early adulthood", "C. Middle adulthood", "D. Late adulthood"], answer: 1 },
+  { section: null, q: "Which of the following is classified as a positive symptom of schizophrenia?", options: ["A. Avolition", "B. Alogia", "C. Delusion", "D. Anhedonia"], answer: 2 },
+  { section: null, q: "A patient believes that other people are deliberately trying to harm him. This is most consistent with:", options: ["A. Grandiose delusion", "B. Persecutory delusion", "C. Thought broadcasting", "D. Idea of reference"], answer: 1 },
+  { section: null, q: "A patient reports hearing voices when no one is speaking. This is an example of:", options: ["A. Delusion", "B. Illusion", "C. Auditory hallucination", "D. Thought insertion"], answer: 2 },
+  { section: null, q: "According to the lecture, the most common type of hallucination in schizophrenia is:", options: ["A. Visual", "B. Auditory", "C. Olfactory", "D. Tactile"], answer: 1 },
+  { section: null, q: "Which of the following is a negative symptom of schizophrenia?", options: ["A. Hallucination", "B. Delusion", "C. Avolition", "D. Disorganized speech"], answer: 2 },
+  { section: null, q: "A patient demonstrates little interest or motivation to engage in activities. This is known as:", options: ["A. Alogia", "B. Avolition", "C. Asociality", "D. Anhedonia"], answer: 1 },
+  { section: null, q: "A patient has a reduced amount of speech. Which negative symptom does this represent?", options: ["A. Avolition", "B. Anhedonia", "C. Alogia", "D. Blunted affect"], answer: 2 },
+  { section: null, q: "An inability to experience pleasure is referred to as:", options: ["A. Asociality", "B. Avolition", "C. Anhedonia", "D. Alogia"], answer: 2 },
+  { section: null, q: "Which of the following is an example of disorganized speech?", options: ["A. Persecutory delusion", "B. Incoherence and loose associations", "C. Auditory hallucination", "D. Blunted affect"], answer: 1 },
+  { section: null, q: "A patient maintains an unusual posture for a prolonged period, such as standing on one leg. This is most consistent with:", options: ["A. Waxy flexibility", "B. Catatonic immobility", "C. Loose association", "D. Avolition"], answer: 1 },
+  { section: null, q: "Waxy flexibility refers to a condition in which:", options: ["A. The patient experiences auditory hallucinations", "B. The patient's limbs can be manipulated and posed by another person", "C. The patient refuses to communicate", "D. The patient demonstrates excessive movement"], answer: 1 },
+  { section: null, q: "Which feature is most characteristic of paranoid schizophrenia according to the lecture?", options: ["A. Severe motor disturbances", "B. Auditory hallucinations and persecutory delusions", "C. Complete absence of hallucinations", "D. Predominantly negative symptoms"], answer: 1 },
+  { section: null, q: "Disorganized schizophrenia is characterized primarily by:", options: ["A. Disorganization of thought processes and difficulty communicating", "B. Severe movement disturbances", "C. Only persecutory delusions", "D. Complete remission of symptoms"], answer: 0 },
+  { section: null, q: "According to the dopamine theory presented in the lecture, schizophrenia is associated with:", options: ["A. Reduced dopamine activity", "B. Excess levels of dopamine", "C. Increased serotonin only", "D. Reduced acetylcholine"], answer: 1 },
+  { section: null, q: "First-generation antipsychotic medications primarily work by:", options: ["A. Increasing dopamine activity", "B. Blocking dopamine receptors", "C. Increasing acetylcholine", "D. Blocking serotonin receptors only"], answer: 1 },
+  { section: null, q: "Social skills training for patients with schizophrenia may include:", options: ["A. Teaching patients to interpret hallucinations", "B. Completing a job application and making appointments", "C. Increasing delusional beliefs", "D. Avoiding all social interaction"], answer: 1 },
+  { section: null, q: "Which statement is correct about a 25-year-old client with newly diagnosed schizophrenia?", options: ["A. Age of onset is typical for schizophrenia", "B. Age of onset is later than usual for schizophrenia", "C. Age of onset is earlier than usual for schizophrenia", "D. Age of onset follows no predictable pattern in schizophrenia"], answer: 0 },
+  { section: null, q: "Which factor is associated with increased risk for schizophrenia?", options: ["A. Alcoholism", "B. Adolescent pregnancy", "C. Overcrowded schools", "D. Poverty"], answer: 3 },
+  { section: null, q: "On an in-patient unit, the nurse is caring for a client who is assuming bizarre positions for long periods of time. To which diagnostic category of schizophrenia would this client most likely be assigned?", options: ["A. Disorganized schizophrenia", "B. Catatonic schizophrenia", "C. Paranoid schizophrenia", "D. Undifferentiated schizophrenia"], answer: 1 },
+  { section: null, q: "A nurse is admitting a client to the in-patient unit who is exhibiting bizarre delusions, auditory hallucinations, and incoherent speech. The client is experiencing suicidal ideations and mood disturbance. Based on this clinical picture, the client is manifesting symptoms in what diagnostic category?", options: ["A. Paranoid schizophrenia", "B. Brief psychotic disorder", "C. Schizoaffective disorder", "D. Schizophreniform disorder"], answer: 2 },
+  { section: null, q: "A client is brought to the emergency department after being found wandering the streets and talking to unseen others. Which situation is further evidence of a diagnosis of schizophrenia for this client?", options: ["A. If the client doesn't exhibit a developmental disorder, such as autism", "B. If the client has a medical condition that could contribute to the symptoms", "C. If the client experiences manic or depressive signs and symptoms", "D. If the client's signs and symptoms last for 6 months"], answer: 3 },
+  { section: null, q: "A client on an in-patient psychiatric unit refuses to take medications because, \"The pill has a special code written on it that will make it poisonous.\" What kind of delusion is this client experiencing?", options: ["A. An erotomanic delusion", "B. A grandiose delusion", "C. A persecutory delusion", "D. A somatic delusion"], answer: 2 },
+  { section: null, q: "A client diagnosed with paranoid schizophrenia tells the nurse about three previous suicide attempts. Which nursing diagnosis would take priority and reflect this client's problem?", options: ["A. Disturbed thought processes", "B. Risk for suicide", "C. Violence: directed toward others", "D. Risk for altered sensory perception"], answer: 1 }
+];
+
+let correctCount = 0;
+let wrongCount = 0;
+let answeredCount = 0;
+const totalQuestions = questions.length;
+
+function buildQuiz() {
+  const container = document.getElementById('quizContent');
+  let html = '';
+  let lastSection = null;
+
+  questions.forEach((q, index) => {
+    if (q.section && q.section !== lastSection) {
+      html += `<div class="section-title">${q.section}</div>`;
+      lastSection = q.section;
+    }
+    html += `
+      <div class="question-card" id="card-${index}">
+        <span class="q-number">Question ${index + 1}</span>
+        <div class="q-text">${escapeHtml(q.q)}</div>
+        <div class="options" id="options-${index}">
+          ${q.options.map((opt, i) => `
+            <button class="option" id="opt-${index}-${i}" onclick="selectAnswer(${index}, ${i})">${escapeHtml(opt)}</button>
+          `).join('')}
+        </div>
+        <div class="feedback" id="feedback-${index}"></div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
+}
+
+function selectAnswer(qIndex, optIndex) {
+  const q = questions[qIndex];
+  const feedback = document.getElementById(`feedback-${qIndex}`);
+  const card = document.getElementById(`card-${qIndex}`);
+
+  if (card.dataset.answered === 'true') return;
+  card.dataset.answered = 'true';
+  answeredCount++;
+
+  q.options.forEach((_, i) => {
+    document.getElementById(`opt-${qIndex}-${i}`).disabled = true;
+  });
+
+  const selectedBtn = document.getElementById(`opt-${qIndex}-${optIndex}`);
+  const correctBtn = document.getElementById(`opt-${qIndex}-${q.answer}`);
+
+  if (optIndex === q.answer) {
+    selectedBtn.classList.add('correct');
+    feedback.className = 'feedback correct-msg show';
+    feedback.textContent = '✅ Correct! Well done.';
+    correctCount++;
+  } else {
+    selectedBtn.classList.add('wrong');
+    correctBtn.classList.add('correct');
+    feedback.className = 'feedback wrong-msg show';
+    feedback.textContent = `❌ Incorrect. The correct answer is: ${q.options[q.answer]}`;
+    wrongCount++;
+  }
+
+  updateScore();
+}
+
+function updateScore() {
+  document.getElementById('correctCount').textContent = correctCount;
+  document.getElementById('wrongCount').textContent = wrongCount;
+  const percent = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+  document.getElementById('percent').textContent = percent + '%';
+  const progress = (answeredCount / totalQuestions) * 100;
+  document.getElementById('progressBar').style.width = progress + '%';
+}
+
+function resetQuiz() {
+  correctCount = 0;
+  wrongCount = 0;
+  answeredCount = 0;
+  document.getElementById('correctCount').textContent = '0';
+  document.getElementById('wrongCount').textContent = '0';
+  document.getElementById('percent').textContent = '0%';
+  document.getElementById('progressBar').style.width = '0%';
+
+  questions.forEach((q, qIndex) => {
+    const card = document.getElementById(`card-${qIndex}`);
+    card.dataset.answered = 'false';
+    const feedback = document.getElementById(`feedback-${qIndex}`);
+    feedback.className = 'feedback';
+    feedback.textContent = '';
+    q.options.forEach((_, i) => {
+      const btn = document.getElementById(`opt-${qIndex}-${i}`);
+      btn.disabled = false;
+      btn.className = 'option';
+    });
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+buildQuiz();
+</script>
+</body>
+</html>
